@@ -5,15 +5,31 @@ import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
 import org.hibernate.criterion.Restrictions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.api.objects.User;
 
 public class UserProfileDao {
 
-    private static SessionFactory factory = HibernateUtil.getSessionFactory();
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserProfileDao.class);
+    private static final SessionFactory sessionFactory = buildSessionFactory();
+
+    private static SessionFactory buildSessionFactory() {
+        try {
+            LOGGER.info("Creating SessionFactory from hibernate config file");
+            return new Configuration().configure().buildSessionFactory();
+        }
+        catch (Exception ex) {
+            LOGGER.error("Initial SessionFactory creation failed." + ex);
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
 
     public void persistUser(User user) {
-        Session session = factory.openSession();
+        LOGGER.info("Persisting userId {}", user.getId());
+        Session session = sessionFactory.openSession();
         Transaction transaction;
         transaction = session.beginTransaction();
         session.saveOrUpdate(convert(user));
@@ -21,8 +37,9 @@ public class UserProfileDao {
         session.close();
     }
 
-    public void persistLanguagesForUser(User user, String language) {
-        Session session = factory.openSession();
+    public void updateLanguageForUser(User user, String language) {
+        LOGGER.info("Updating language {} for a userId {}", language, user.getId());
+        Session session = sessionFactory.openSession();
         Transaction transaction;
         transaction = session.beginTransaction();
         UserToLanguage userToLanguage = new UserToLanguage(user.getId(), language);
@@ -32,9 +49,11 @@ public class UserProfileDao {
         if (!criteria.list().isEmpty()) {
             UserToLanguage userToLanguageFromDB = (UserToLanguage) criteria.list().iterator().next();
             if (userToLanguageFromDB.getActive() == 1) {
+                LOGGER.info("Disabling language {} for userId {}", language, user.getId());
                 userToLanguageFromDB.setActive(0);
                 session.saveOrUpdate(userToLanguageFromDB);
             } else {
+                LOGGER.info("Activating language {} for userId {}", language, user.getId());
                 userToLanguageFromDB.setActive(1);
                 session.saveOrUpdate(userToLanguageFromDB);
             }
@@ -44,7 +63,8 @@ public class UserProfileDao {
     }
 
     public List<UserToLanguage> retrieveLanguagesForUser(User user) {
-        Session session = factory.openSession();
+        LOGGER.info("Retrieving active languages for a userId {}", user.getId());
+        Session session = sessionFactory.openSession();
         Transaction transaction;
         transaction = session.beginTransaction();
         Criteria criteria = session.createCriteria(UserToLanguage.class);
@@ -53,6 +73,9 @@ public class UserProfileDao {
         List<UserToLanguage> userToLanguageList = criteria.list();
         transaction.commit();
         session.close();
+        LOGGER.info("Returning list of active languages for a userId {}: {}",
+            user.getId(),
+            userToLanguageList.stream().map(UserToLanguage::getLanguage).toArray());
         return userToLanguageList;
     }
 

@@ -26,6 +26,8 @@ import max.telegram.model.Keyboard;
 import max.telegram.model.Language;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.api.methods.AnswerInlineQuery;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -42,14 +44,15 @@ import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboar
 import org.telegram.telegrambots.bots.TelegramLongPollingCommandBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
-public class MyProjectHandler extends TelegramLongPollingCommandBot {
+public class UpdateHandler extends TelegramLongPollingCommandBot {
 
-    private ExecutorService executorService;
-    private static BotConfig botConfig = BotConfig.getInstance();
-    private static YTranslateClient client = new YTranslateClient();
+    private static final BotConfig botConfig = BotConfig.getInstance();
+    private static final YTranslateClient client = new YTranslateClient();
+    private static final Logger LOGGER = LoggerFactory.getLogger(UpdateHandler.class);
     private UserProfileDao userProfileDao;
+    private ExecutorService executorService;
 
-    public MyProjectHandler() {
+    public UpdateHandler() {
         executorService = Executors.newFixedThreadPool(10);
         register(new LanguagesCommand());
         register(new StartCommand());
@@ -58,25 +61,23 @@ public class MyProjectHandler extends TelegramLongPollingCommandBot {
 
     @Override
     public void processNonCommandUpdate(Update update) {
-        executorService.execute(() -> {
+        executorService.execute(() -> handle(update));
+    }
 
-            if (update.hasMessage() && update.getMessage().hasText()) {
-                handleTextMessage(update);
+    private void handle(Update update) {
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            handleTextMessage(update);
+        } else if (update.hasInlineQuery()) {
+            handleInlineQuery(update);
+        } else if (update.hasCallbackQuery()) {
+            handleCallBackQuery(update);
+        } else if (update.hasMessage() && update.getMessage().getVoice() != null) {
+            try {
+                handleVoice(update);
+            } catch (Exception e) {
+                LOGGER.error("Error while processing voice message!" + e);
             }
-            if (update.hasInlineQuery()) {
-                handleInlineQuery(update);
-            }
-            if (update.hasCallbackQuery()) {
-                handleCallBachQuery(update);
-            }
-            if (update.hasMessage() && update.getMessage().getVoice() != null) {
-                try {
-                    handleVoice(update);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        } else throw new UnsupportedOperationException("The operation is not supported yet! ");
     }
 
     private void handleVoice(Update update) throws Exception {
@@ -91,14 +92,14 @@ public class MyProjectHandler extends TelegramLongPollingCommandBot {
         RecognitionConfig config = RecognitionConfig.newBuilder()
             .setEncoding(RecognitionConfig.AudioEncoding.OGG_OPUS)
             .setSampleRateHertz(16000)
-            .setLanguageCode("en-US")
+            .setLanguageCode("pl_PL")
             .build();
         RecognitionAudio audio = RecognitionAudio.newBuilder()
             .setContent(audioBytes)
             .build();
 
         SpeechRecognitionAlternative alternativeToReturn;
-        SendMessage sendMessageRequest;
+        SendMessage sendMessageRequest = null;
 
         try (SpeechClient speech = SpeechClient.create()) {
             RecognizeResponse response = speech.recognize(config, audio);
@@ -127,18 +128,21 @@ public class MyProjectHandler extends TelegramLongPollingCommandBot {
             }
 
         } catch (Exception e) {
-            System.out.println("ERROR occurred in Google Speech Api ");
-            throw e;
+            LOGGER.error("ERROR occurred in Google Speech Api " + e);
+            throw new RuntimeException();
         }
-        sendMessage(sendMessageRequest);
-
+        try {
+            sendMessage(sendMessageRequest);
+        } catch (TelegramApiException e) {
+            LOGGER.error("Error while sending message!" + e);
+        }
     }
 
-    private void handleCallBachQuery(Update update) {
+    private void handleCallBackQuery(Update update) {
         Integer messageId = update.getCallbackQuery().getMessage().getMessageId();
         Long chatId = update.getCallbackQuery().getMessage().getChatId();
         User user = update.getCallbackQuery().getFrom();
-        userProfileDao.persistLanguagesForUser(user, update
+        userProfileDao.updateLanguageForUser(user, update
             .getCallbackQuery()
             .getData());
         EditMessageReplyMarkup editMessageReplyMarkup = new EditMessageReplyMarkup();
@@ -149,7 +153,7 @@ public class MyProjectHandler extends TelegramLongPollingCommandBot {
         try {
             editMessageReplyMarkup(editMessageReplyMarkup);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            LOGGER.error("Error while processing callBackQuery!" + e);
         }
     }
 
@@ -170,13 +174,14 @@ public class MyProjectHandler extends TelegramLongPollingCommandBot {
             InlineQueryResultArticle resultArticle = buildInlineQueryResultArticle(translation, language);
             resultArticles.add(resultArticle);
         }
+
         AnswerInlineQuery answer = new AnswerInlineQuery();
         answer.setInlineQueryId(inlineQuery.getId());
         answer.setResults(resultArticles);
         try {
             answerInlineQuery(answer);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            LOGGER.error("Error answering inlineQuery. " + e);
         }
     }
 
@@ -187,11 +192,10 @@ public class MyProjectHandler extends TelegramLongPollingCommandBot {
             SendMessage sendMessageRequest = new SendMessage();
             sendMessageRequest.setText(new String(response.getBytes(), "UTF-8"));
             sendMessageRequest.setChatId(message.getChatId().toString());
+
             sendMessage(sendMessageRequest);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
+        } catch (IOException | TelegramApiException e) {
+            LOGGER.error("Error while handling text message!" + e);
         }
     }
 

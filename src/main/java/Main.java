@@ -1,4 +1,4 @@
-import max.telegram.handler.MyProjectHandler;
+import max.telegram.handler.UpdateHandler;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
@@ -11,7 +11,7 @@ public class Main {
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
         try {
             ApiContextInitializer.init();
-            telegramBotsApi.registerBot(new MyProjectHandler());
+            telegramBotsApi.registerBot(new UpdateHandler());
         } catch (TelegramApiException e) {
             BotLogger.error("", e);
         }

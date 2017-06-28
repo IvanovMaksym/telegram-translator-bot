@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 public class UserToLanguage implements Serializable {
 
-
     private Integer recordId;
     private Integer userId;
     private String language;

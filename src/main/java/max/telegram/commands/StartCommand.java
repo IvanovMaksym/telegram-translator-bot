@@ -1,6 +1,8 @@
 package max.telegram.commands;
 
 import max.telegram.db.UserProfileDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Chat;
 import org.telegram.telegrambots.api.objects.User;
@@ -10,6 +12,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 public class StartCommand extends BotCommand {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(StartCommand.class);
     private UserProfileDao userProfileDao;
 
     public StartCommand() {
@@ -30,7 +33,7 @@ public class StartCommand extends BotCommand {
         try {
             sender.sendMessage(message);
         } catch (TelegramApiException e) {
-            System.out.println("error oops");
+            LOGGER.error("Error while sending text message from StartCommand" + e);
         }
     }
 }

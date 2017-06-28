@@ -2,6 +2,8 @@ package max.telegram.commands;
 
 import max.telegram.db.UserProfileDao;
 import max.telegram.model.Keyboard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Chat;
 import org.telegram.telegrambots.api.objects.User;
@@ -12,6 +14,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 public class LanguagesCommand extends BotCommand {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(LanguagesCommand.class);
     private UserProfileDao userProfileDao;
 
     public LanguagesCommand() {
@@ -21,6 +24,7 @@ public class LanguagesCommand extends BotCommand {
 
     @Override
     public void execute(AbsSender sender, User user, Chat chat, String[] strings) {
+        LOGGER.info("Received command {}", this.getCommandIdentifier());
         userProfileDao.persistUser(user);
         SendMessage message = new SendMessage();
         message.setChatId(chat.getId().toString());
@@ -33,7 +37,7 @@ public class LanguagesCommand extends BotCommand {
         try {
             sender.sendMessage(message);
         } catch (TelegramApiException e) {
-            System.out.println("error oops");
+            LOGGER.error("Error while sending text message from LanguagesCommand " + e);
         }
     }
 }

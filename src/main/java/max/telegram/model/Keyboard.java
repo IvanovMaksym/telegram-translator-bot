@@ -28,11 +28,16 @@ public class Keyboard {
         List<InlineKeyboardButton> rowInline = new ArrayList<>();
         for (Language language : Language.values()) {
             if (supportedLanguages.contains(language.getLanguageCode())) {
-                rowInline.add(new InlineKeyboardButton().setText(language.getLanguageName() + " " + "\u2714")
+                rowInline.add(new InlineKeyboardButton().setText(language.getEmoji().getUnicode() + " " +language
+                    .getLanguageName() + " " +
+                    "\u2714")
                     .setCallbackData
                     (language.getLanguageCode()));
             } else {
-                rowInline.add(new InlineKeyboardButton().setText(language.getLanguageName()).setCallbackData(language
+                rowInline.add(new InlineKeyboardButton().setText(language.getEmoji().getUnicode() + " " + language
+                    .getLanguageName())
+                    .setCallbackData
+                    (language
                     .getLanguageCode()));
             }
         }
