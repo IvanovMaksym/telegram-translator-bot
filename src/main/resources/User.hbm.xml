@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="max.telegram.db.UserProfile" table="USER_PROFILE">
+        <meta attribute="class-description">
+            This class contains the User detail.
+        </meta>
+        <id name="id" type="integer" column="ID">
+            <!--<generator class="native"/>-->
+        </id>
+        <property name="firstName" column="FIRST_NAME" type="string"/>
+        <property name="lastName" column="LAST_NAME" type="string"/>
+        <property name="userName" column="USERNAME" type="string"/>
+        <property name="languageCode" column="LANGUAGE_CODE" type="string"/>
+    </class>
+</hibernate-mapping>
