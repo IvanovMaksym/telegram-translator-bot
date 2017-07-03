@@ -1,4 +1,5 @@
-import max.telegram.handler.UpdateHandler;
+package max.telegram.handler;
+
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
