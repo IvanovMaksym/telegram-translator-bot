@@ -1,12 +1,31 @@
-package max.telegram.db;
+package max.telegram.model;
 
 import java.io.Serializable;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
+@Entity
+@Table(name = "USER_ID_LANGUAGE", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "RECORD_ID")})
 public class UserToLanguage implements Serializable {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "RECORD_ID", unique = true, nullable = false)
     private Integer recordId;
+
+    @Column(name = "USER_ID")
     private Integer userId;
+
+    @Column(name = "LANGUAGE")
     private String language;
+
+    @Column(name = "ACTIVE")
     private int active;
 
     public UserToLanguage() {

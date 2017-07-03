@@ -1,6 +1,9 @@
 package max.telegram.db;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import max.telegram.model.UserProfile;
+import max.telegram.model.UserToLanguage;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -16,6 +19,17 @@ public class UserProfileDao {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserProfileDao.class);
     private static final SessionFactory sessionFactory = buildSessionFactory();
 
+    private static UserProfileDao userProfileDao = null;
+
+    protected UserProfileDao(){}
+
+    public static UserProfileDao getInstance() {
+        if (userProfileDao == null) {
+            userProfileDao = new UserProfileDao();
+        }
+        return userProfileDao;
+    }
+
     private static SessionFactory buildSessionFactory() {
         try {
             LOGGER.info("Creating SessionFactory from hibernate config file");
@@ -25,6 +39,17 @@ public class UserProfileDao {
             LOGGER.error("Initial SessionFactory creation failed." + ex);
             throw new ExceptionInInitializerError(ex);
         }
+    }
+
+    public void updateUserNativeLanguage(User user, String language) {
+        LOGGER.info("Updating native language {} for userId {}", language, user.getId());
+        Session session = sessionFactory.openSession();
+        session.beginTransaction();
+        UserProfile userProfile = convert(user);
+        userProfile.setLanguageCode(language);
+        session.saveOrUpdate(userProfile);
+        session.getTransaction().commit();
+        session.close();
     }
 
     public void persistUser(User user) {
@@ -37,7 +62,20 @@ public class UserProfileDao {
         session.close();
     }
 
-    public void updateLanguageForUser(User user, String language) {
+    public List<String> getUserLanguage(User user) {
+        LOGGER.info("Retrieving language for userId {}", user.getId());
+        Session session = sessionFactory.openSession();
+        Transaction transaction;
+        transaction = session.beginTransaction();
+        Criteria criteria = session.createCriteria(UserProfile.class);
+        criteria.add(Restrictions.eq("id", user.getId()));
+        List<UserProfile> userProfiles = criteria.list();
+        transaction.commit();
+        session.close();
+        return userProfiles.stream().map(UserProfile::getLanguageCode).collect(Collectors.toList());
+    }
+
+    public void updateLanguagesForUser(User user, String language) {
         LOGGER.info("Updating language {} for a userId {}", language, user.getId());
         Session session = sessionFactory.openSession();
         Transaction transaction;
