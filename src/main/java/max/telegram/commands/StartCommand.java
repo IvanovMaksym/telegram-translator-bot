@@ -13,11 +13,10 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 public class StartCommand extends BotCommand {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StartCommand.class);
-    private UserProfileDao userProfileDao;
+    private UserProfileDao userProfileDao = UserProfileDao.getInstance();
 
     public StartCommand() {
         super("start", "Set languages for translation");
-        userProfileDao = new UserProfileDao();
     }
 
     @Override
@@ -26,7 +25,11 @@ public class StartCommand extends BotCommand {
         SendMessage message = new SendMessage();
         message.setChatId(chat.getId().toString());
         message.enableHtml(true);
-        message.setText("Hey There! Go ahead and click /languages to select the languages to translate to! Try"
+        message.setText("Hey " + user.getFirstName() + " " + user.getLastName() + "! Go ahead and click /languages to "
+            + "select the "
+            + "languages "
+            + "to "
+            + "translate to! Try"
             + " inline mode in any chat. For the sake of demo select multiple ones, then you might go back and update "
             + "your choice.");
 
