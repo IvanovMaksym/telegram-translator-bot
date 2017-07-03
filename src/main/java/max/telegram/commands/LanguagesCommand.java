@@ -1,6 +1,5 @@
 package max.telegram.commands;
 
-import max.telegram.db.UserProfileDao;
 import max.telegram.model.Keyboard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,23 +14,20 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 public class LanguagesCommand extends BotCommand {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LanguagesCommand.class);
-    private UserProfileDao userProfileDao;
 
     public LanguagesCommand() {
         super("languages", "Set languages for translation");
-        userProfileDao = new UserProfileDao();
     }
 
     @Override
     public void execute(AbsSender sender, User user, Chat chat, String[] strings) {
         LOGGER.info("Received command {}", this.getCommandIdentifier());
-        userProfileDao.persistUser(user);
         SendMessage message = new SendMessage();
         message.setChatId(chat.getId().toString());
         message.enableHtml(true);
         message.setText("Hey There! Here's a list with languages. Select the ones you want me to translate to!");
-        Keyboard keyboard = new Keyboard(user, userProfileDao);
-        InlineKeyboardMarkup markupInline = keyboard.buildKeyboard();
+        Keyboard keyboard = new Keyboard(user);
+        InlineKeyboardMarkup markupInline = keyboard.buildKeyboard(this);
         message.setReplyMarkup(markupInline);
 
         try {

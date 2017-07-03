@@ -18,10 +18,11 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import max.telegram.client.YTranslateClient;
 import max.telegram.commands.LanguagesCommand;
+import max.telegram.commands.MyLanguageCommand;
 import max.telegram.commands.StartCommand;
 import max.telegram.config.BotConfig;
 import max.telegram.db.UserProfileDao;
-import max.telegram.db.UserToLanguage;
+import max.telegram.model.UserToLanguage;
 import max.telegram.model.Keyboard;
 import max.telegram.model.Language;
 import org.apache.commons.io.IOUtils;
@@ -49,14 +50,14 @@ public class UpdateHandler extends TelegramLongPollingCommandBot {
     private static final BotConfig botConfig = BotConfig.getInstance();
     private static final YTranslateClient client = new YTranslateClient();
     private static final Logger LOGGER = LoggerFactory.getLogger(UpdateHandler.class);
-    private UserProfileDao userProfileDao;
+    private UserProfileDao userProfileDao = UserProfileDao.getInstance();
     private ExecutorService executorService;
 
     public UpdateHandler() {
         executorService = Executors.newFixedThreadPool(10);
         register(new LanguagesCommand());
         register(new StartCommand());
-        userProfileDao = new UserProfileDao();
+        register(new MyLanguageCommand());
     }
 
     @Override
@@ -81,6 +82,7 @@ public class UpdateHandler extends TelegramLongPollingCommandBot {
     }
 
     private void handleVoice(Update update) throws Exception {
+        LOGGER.info("Got a voice message. About to download from telegram servers.");
         String fileId = update.getMessage().getVoice().getFileId();
 
         String fileUrl = getFile(new GetFile().setFileId(fileId)).getFileUrl(BotConfig.getInstance().getBotToken());
@@ -88,20 +90,22 @@ public class UpdateHandler extends TelegramLongPollingCommandBot {
         URL voiceURL = new URL(fileUrl);
         byte[] data = IOUtils.toByteArray(voiceURL.openStream());
         ByteString audioBytes = ByteString.copyFrom(data);
+        LOGGER.info("Audio downloaded from Telegram servers");
 
         RecognitionConfig config = RecognitionConfig.newBuilder()
             .setEncoding(RecognitionConfig.AudioEncoding.OGG_OPUS)
             .setSampleRateHertz(16000)
-            .setLanguageCode("pl_PL")
+            .setLanguageCode(userProfileDao.getUserLanguage(update.getMessage().getFrom()).get(0))
             .build();
         RecognitionAudio audio = RecognitionAudio.newBuilder()
             .setContent(audioBytes)
             .build();
 
         SpeechRecognitionAlternative alternativeToReturn;
-        SendMessage sendMessageRequest = null;
+        SendMessage sendMessageRequest;
 
         try (SpeechClient speech = SpeechClient.create()) {
+            LOGGER.info("About to speech recognize the voice message...");
             RecognizeResponse response = speech.recognize(config, audio);
             List<SpeechRecognitionResult> results = response.getResultsList();
 
@@ -109,19 +113,21 @@ public class UpdateHandler extends TelegramLongPollingCommandBot {
                 (SpeechRecognitionResult::getAlternativesList).findFirst();
             if (alternatives.isPresent()) {
                 alternativeToReturn = alternatives.get().get(0);
+                LOGGER.info("Speech recognized: {}, sending back to chat", alternativeToReturn);
                 sendMessageRequest = new SendMessage();
-                sendMessageRequest.setText(alternativeToReturn.getTranscript());
+                sendMessageRequest.setText("You said: " + alternativeToReturn.getTranscript());
                 sendMessageRequest.setChatId(update.getMessage().getChatId());
                 InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
                 List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
                 List<InlineKeyboardButton> rowInline = new ArrayList<>();
-                rowInline.add(new InlineKeyboardButton("Ready to fly to some chat!")
+                rowInline.add(new InlineKeyboardButton("Click here and select any chat!")
                     .setSwitchInlineQuery(alternativeToReturn.getTranscript()));
                 rowsInline.add(rowInline);
                 markupInline.setKeyboard(rowsInline);
                 sendMessageRequest.setReplyMarkup(markupInline);
 
             } else {
+                LOGGER.info("Speech could not be recognized. Sending message to chat");
                 sendMessageRequest = new SendMessage();
                 sendMessageRequest.setText("Sorry I didn't get that. Please try again ^^");
                 sendMessageRequest.setChatId(update.getMessage().getChatId());
@@ -142,19 +148,26 @@ public class UpdateHandler extends TelegramLongPollingCommandBot {
         Integer messageId = update.getCallbackQuery().getMessage().getMessageId();
         Long chatId = update.getCallbackQuery().getMessage().getChatId();
         User user = update.getCallbackQuery().getFrom();
-        userProfileDao.updateLanguageForUser(user, update
-            .getCallbackQuery()
-            .getData());
+        String callBackQueryData = update.getCallbackQuery().getData();
+        String fromCommand = callBackQueryData.split("-")[0];
+        String language = callBackQueryData.split("-")[1];
         EditMessageReplyMarkup editMessageReplyMarkup = new EditMessageReplyMarkup();
-        Keyboard keyboard = new Keyboard(user, userProfileDao);
-        editMessageReplyMarkup.setReplyMarkup(keyboard.buildKeyboard())
-            .setChatId(chatId)
-            .setMessageId(messageId);
+        Keyboard keyboard = new Keyboard(user);
         try {
+            if ("mylanguage".equals(fromCommand)) {
+                userProfileDao.updateUserNativeLanguage(user, language);
+            } else if ("languages".equals(fromCommand)){
+                userProfileDao.updateLanguagesForUser(user, language);
+            }
+            editMessageReplyMarkup.setReplyMarkup(keyboard.buildKeyboard(getRegisteredCommand(fromCommand)))
+                .setChatId(chatId)
+                .setMessageId(messageId);
             editMessageReplyMarkup(editMessageReplyMarkup);
         } catch (TelegramApiException e) {
-            LOGGER.error("Error while processing callBackQuery!" + e);
+            LOGGER.error("Error while handling CallBackQuery", e);
         }
+
+
     }
 
     private void handleInlineQuery(Update update) {
@@ -170,7 +183,7 @@ public class UpdateHandler extends TelegramLongPollingCommandBot {
                 (Collectors.toList());
         List<InlineQueryResult> resultArticles = new ArrayList<>();
         for (Language language : languages) {
-            String translation = client.translate(inlineQuery.getQuery(), language.getLanguageCode());
+            String translation = client.translate(inlineQuery.getQuery(), language.getLanguageCode().split("_")[0]);
             InlineQueryResultArticle resultArticle = buildInlineQueryResultArticle(translation, language);
             resultArticles.add(resultArticle);
         }
