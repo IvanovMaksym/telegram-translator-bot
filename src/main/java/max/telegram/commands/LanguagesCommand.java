@@ -1,22 +1,34 @@
 package max.telegram.commands;
 
+import max.telegram.db.UserProfileRepository;
 import max.telegram.model.Keyboard;
+import max.telegram.model.UserLanguage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
-import org.telegram.telegrambots.api.objects.Chat;
-import org.telegram.telegrambots.api.objects.User;
-import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.bots.AbsSender;
-import org.telegram.telegrambots.bots.commands.BotCommand;
-import org.telegram.telegrambots.exceptions.TelegramApiException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Chat;
+import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.bots.AbsSender;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Component
 public class LanguagesCommand extends BotCommand {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LanguagesCommand.class);
 
-    public LanguagesCommand() {
+    private UserProfileRepository userProfileRepository;
+
+    @Autowired
+    public LanguagesCommand(UserProfileRepository userProfileRepository) {
         super("languages", "Set languages for translation");
+        this.userProfileRepository = userProfileRepository;
     }
 
     @Override
@@ -26,12 +38,16 @@ public class LanguagesCommand extends BotCommand {
         message.setChatId(chat.getId().toString());
         message.enableHtml(true);
         message.setText("Hey There! Here's a list with languages. Select the ones you want me to translate to!");
-        Keyboard keyboard = new Keyboard(user);
-        InlineKeyboardMarkup markupInline = keyboard.buildKeyboard(this);
+        List<String> supportedLanguages = userProfileRepository.findByTelegramId(user.getId()).orElseThrow(RuntimeException::new)
+                .getLanguageCodes().stream()
+                .map(UserLanguage::getLanguageCode)
+                .collect(Collectors.toList());
+
+        InlineKeyboardMarkup markupInline = Keyboard.buildKeyboard(supportedLanguages, getCommandIdentifier());
         message.setReplyMarkup(markupInline);
 
         try {
-            sender.sendMessage(message);
+            sender.execute(message);
         } catch (TelegramApiException e) {
             LOGGER.error("Error while sending text message from LanguagesCommand " + e);
         }

@@ -8,8 +8,7 @@ public enum Language {
     EN(
         "en_US",
         "English",
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Union_flag_1606_%28Kings_Colors%29.svg/2000px"
-            + "-Union_flag_1606_%28Kings_Colors%29.svg.png",
+        "https://cdn.pixabay.com/photo/2015/11/06/13/29/union-jack-1027898_960_720.jpg",
         EmojiManager.getForAlias("us")
     ),
     ES(
@@ -27,7 +26,7 @@ public enum Language {
     DE(
         "de_DE",
         "German",
-        "http://www.planwallpaper.com/static/images/German-Flag.jpg",
+        "https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/Flag_of_Germany.svg/1280px-Flag_of_Germany.svg.png",
         EmojiManager.getForAlias("de")),
     PL(
         "pl_PL",
@@ -37,7 +36,7 @@ public enum Language {
     CZ(
         "cs_CZ",
         "Czech",
-        "https://www.pegasus-europe.org/userfiles/images/cz.gif",
+        "https://cdn.webshopapp.com/shops/94414/files/52379424/flag-of-the-czech-republic.jpg",
         EmojiManager.getForAlias("cz")
     ),
     FR(
