@@ -14,16 +14,22 @@ public class UserAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(unique = true, nullable = false)
+    @Column(name = "ID", unique = true, nullable = false)
     private Integer id;
+    @Column(name = "TELEGRAM_ID")
     private Integer telegramId;
+    @Column(name = "FIRST_NAME")
     private String firstName;
+    @Column(name = "LAST_NAME")
     private String lastName;
+    @Column(name = "USERNAME")
     private String userName;
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id", nullable = false)
-    private List<UserLanguage> languageCodes = new ArrayList<>();
-
+    @Column(name = "NATIVE_LANGUAGE")
+    private String nativeLanguage;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "USER_LANGUAGE", joinColumns = {@JoinColumn(name = "USER_ID")})
+    @Column(name = "LANGUAGE")
+    private List<String> languageCodes = new ArrayList<>();
 
     public Integer getId() {
         return id;
@@ -31,6 +37,14 @@ public class UserAccount {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Integer getTelegramId() {
+        return telegramId;
+    }
+
+    public void setTelegramId(Integer telegramId) {
+        this.telegramId = telegramId;
     }
 
     public String getFirstName() {
@@ -57,20 +71,20 @@ public class UserAccount {
         this.userName = userName;
     }
 
-    public List<UserLanguage> getLanguageCodes() {
+    public String getNativeLanguage() {
+        return nativeLanguage;
+    }
+
+    public void setNativeLanguage(String nativeLanguage) {
+        this.nativeLanguage = nativeLanguage;
+    }
+
+    public List<String> getLanguageCodes() {
         return languageCodes;
     }
 
-    public void setLanguageCodes(List<UserLanguage> languageCodes) {
+    public void setLanguageCodes(List<String> languageCodes) {
         this.languageCodes = languageCodes;
-    }
-
-    public Integer getTelegramId() {
-        return telegramId;
-    }
-
-    public void setTelegramId(Integer telegramId) {
-        this.telegramId = telegramId;
     }
 
     @Override
@@ -83,11 +97,12 @@ public class UserAccount {
                 Objects.equals(firstName, that.firstName) &&
                 Objects.equals(lastName, that.lastName) &&
                 Objects.equals(userName, that.userName) &&
+                Objects.equals(nativeLanguage, that.nativeLanguage) &&
                 Objects.equals(languageCodes, that.languageCodes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, telegramId, firstName, lastName, userName, languageCodes);
+        return Objects.hash(id, telegramId, firstName, lastName, userName, nativeLanguage, languageCodes);
     }
 }

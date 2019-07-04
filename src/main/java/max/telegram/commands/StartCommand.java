@@ -2,7 +2,6 @@ package max.telegram.commands;
 
 import max.telegram.db.UserProfileRepository;
 import max.telegram.model.UserAccount;
-import max.telegram.model.UserLanguage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,13 +31,10 @@ public class StartCommand extends BotCommand {
         userAccount.setFirstName(user.getFirstName());
         userAccount.setLastName(user.getLastName());
         userAccount.setTelegramId(user.getId());
+        userAccount.setNativeLanguage(user.getLanguageCode());
 
-        UserLanguage userLanguage = new UserLanguage();
-        userLanguage.setNative(true);
-        userLanguage.setLanguageCode(user.getLanguageCode());
-
-        userAccount.getLanguageCodes().add(userLanguage);
         userProfileRepository.save(userAccount);
+
         SendMessage message = new SendMessage();
         message.setChatId(chat.getId().toString());
         message.enableHtml(true);

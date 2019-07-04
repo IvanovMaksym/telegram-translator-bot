@@ -2,7 +2,6 @@ package max.telegram.commands;
 
 import max.telegram.db.UserProfileRepository;
 import max.telegram.model.Keyboard;
-import max.telegram.model.UserLanguage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +15,6 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class LanguagesCommand extends BotCommand {
@@ -39,9 +37,7 @@ public class LanguagesCommand extends BotCommand {
         message.enableHtml(true);
         message.setText("Hey There! Here's a list with languages. Select the ones you want me to translate to!");
         List<String> supportedLanguages = userProfileRepository.findByTelegramId(user.getId()).orElseThrow(RuntimeException::new)
-                .getLanguageCodes().stream()
-                .map(UserLanguage::getLanguageCode)
-                .collect(Collectors.toList());
+                .getLanguageCodes();
 
         InlineKeyboardMarkup markupInline = Keyboard.buildKeyboard(supportedLanguages, getCommandIdentifier());
         message.setReplyMarkup(markupInline);
