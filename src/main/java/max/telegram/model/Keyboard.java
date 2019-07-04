@@ -4,6 +4,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,7 +13,7 @@ public class Keyboard {
     private Keyboard() {
     }
 
-    public static InlineKeyboardMarkup buildKeyboard(List<String> supportedLanguages, String commandId) {
+    public static InlineKeyboardMarkup buildKeyboard(Collection<String> supportedLanguages, String commandId) {
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
         List<InlineKeyboardButton> rowInline = new ArrayList<>();

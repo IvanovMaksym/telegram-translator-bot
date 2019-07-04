@@ -14,7 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.List;
+import java.util.Set;
 
 @Component
 public class LanguagesCommand extends BotCommand {
@@ -36,7 +36,7 @@ public class LanguagesCommand extends BotCommand {
         message.setChatId(chat.getId().toString());
         message.enableHtml(true);
         message.setText("Hey There! Here's a list with languages. Select the ones you want me to translate to!");
-        List<String> supportedLanguages = userProfileRepository.findByTelegramId(user.getId()).orElseThrow(RuntimeException::new)
+        Set<String> supportedLanguages = userProfileRepository.findByTelegramId(user.getId()).orElseThrow(RuntimeException::new)
                 .getLanguageCodes();
 
         InlineKeyboardMarkup markupInline = Keyboard.buildKeyboard(supportedLanguages, getCommandIdentifier());

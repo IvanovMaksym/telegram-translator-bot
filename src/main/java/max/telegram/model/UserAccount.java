@@ -1,9 +1,9 @@
 package max.telegram.model;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "USER")
@@ -28,8 +28,8 @@ public class UserAccount {
     private String nativeLanguage;
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "USER_LANGUAGE", joinColumns = {@JoinColumn(name = "USER_ID")})
-    @Column(name = "LANGUAGE")
-    private List<String> languageCodes = new ArrayList<>();
+    @Column(name = "LANGUAGE", nullable = false)
+    private Set<String> languageCodes = new HashSet<>();
 
     public Integer getId() {
         return id;
@@ -79,11 +79,11 @@ public class UserAccount {
         this.nativeLanguage = nativeLanguage;
     }
 
-    public List<String> getLanguageCodes() {
+    public Set<String> getLanguageCodes() {
         return languageCodes;
     }
 
-    public void setLanguageCodes(List<String> languageCodes) {
+    public void setLanguageCodes(Set<String> languageCodes) {
         this.languageCodes = languageCodes;
     }
 

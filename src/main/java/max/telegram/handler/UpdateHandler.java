@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -79,7 +80,7 @@ public class UpdateHandler extends TelegramLongPollingCommandBot {
                 userAccount.setNativeLanguage(language);
                 userProfileRepository.save(userAccount);
             } else if ("languages".equals(fromCommand)) {
-                List<String> languageCodes = userAccount.getLanguageCodes();
+                Set<String> languageCodes = userAccount.getLanguageCodes();
                 List<String> matchedLanguage = languageCodes.stream()
                         .filter(userLanguage -> userLanguage.equals(language))
                         .collect(Collectors.toList());
